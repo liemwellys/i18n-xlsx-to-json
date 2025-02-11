@@ -1,37 +1,18 @@
-import pandas as pd
 import json
-import os
 from datetime import datetime
+
+import pandas as pd
 
 
 def load_existing_data(filename):
-    """
-    Load existing data from a JSON file.
-
-    Args:
-      filename (str): The path to the JSON file.
-
-    Returns:
-      dict: The loaded data as a dictionary. If the file doesn't exist, an empty dictionary is returned.
-    """
-    if os.path.exists(filename):
-        with open(filename, 'r') as f:
-            return json.load(f)
-    else:
+    try:
+        with open(filename, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
         return {}
 
 
 def write_data_to_file(filename, data):
-    """
-    Write data to a file in JSON format.
-
-    Args:
-      filename (str): The name of the file to write the data to.
-      data (dict): The data to be written to the file.
-
-    Returns:
-      None
-    """
     with open(filename, 'w') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         f.write('\n')
@@ -39,7 +20,7 @@ def write_data_to_file(filename, data):
 
 def process_sheet(sheet_name, dataframe, current_date):
     """
-    Process a sheet in an Excel file and convert it to a JSON file.
+    Process the given sheet and save the data to JSON files.
 
     Args:
       sheet_name (str): The name of the sheet to process.
@@ -55,7 +36,16 @@ def process_sheet(sheet_name, dataframe, current_date):
     dataframe.set_index(dataframe.columns[0], inplace=True)
 
     for lang in dataframe.columns:
-        lang_dict = {sheet_name: dataframe[lang].dropna().to_dict()}
+        lang_dict = {sheet_name: {}}
+        for key, value in dataframe[lang].dropna().items():
+            keys = key.split('.')
+            d = lang_dict[sheet_name]
+            for k in keys[:-1]:
+                if k not in d:
+                    d[k] = {}
+                d = d[k]
+            d[keys[-1]] = value
+
         filename = f'{current_date}-{lang}.json'
         existing_data = load_existing_data(filename)
         existing_data.update(lang_dict)
@@ -78,7 +68,7 @@ def process_xlsx(xlsx, current_date):
 
 
 # Get the current date
-current_date = datetime.now().strftime('%Y-%m-%d-%H-%M')
+current_date = datetime.now().strftime('%Y%m%d-%H%M')
 
 # Load the Excel file
 xlsx = pd.read_excel('i18n.xlsx', sheet_name=None)
