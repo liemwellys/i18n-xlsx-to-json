@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 
 import pandas as pd
@@ -18,14 +19,14 @@ def write_data_to_file(filename, data):
         f.write('\n')
 
 
-def process_sheet(sheet_name, dataframe, current_date):
+def process_sheet(sheet_name, dataframe, output_dir):
     """
     Process the given sheet and save the data to JSON files.
 
     Args:
       sheet_name (str): The name of the sheet to process.
       dataframe (pandas.DataFrame): The DataFrame containing the sheet data.
-      current_date (str): The current date in the format 'YYYY-MM-DD'.
+      output_dir (str): The directory where the JSON files will be saved.
 
     Returns:
       None
@@ -38,6 +39,9 @@ def process_sheet(sheet_name, dataframe, current_date):
     for lang in dataframe.columns:
         lang_dict = {sheet_name: {}}
         for key, value in dataframe[lang].dropna().items():
+            # Check if the key is a non-empty string
+            if not isinstance(key, str) or not key:
+                continue
             keys = key.split('.')
             d = lang_dict[sheet_name]
             for k in keys[:-1]:
@@ -46,7 +50,10 @@ def process_sheet(sheet_name, dataframe, current_date):
                 d = d[k]
             d[keys[-1]] = value
 
-        filename = f'{current_date}-{lang}.json'
+        # Ensure the output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        filename = os.path.join(output_dir, f'{lang}.json')
         existing_data = load_existing_data(filename)
         existing_data.update(lang_dict)
         write_data_to_file(filename, existing_data)
@@ -70,8 +77,11 @@ def process_xlsx(xlsx, current_date):
 # Get the current date
 current_date = datetime.now().strftime('%Y%m%d-%H%M')
 
+# Define the output directory
+output_dir = os.path.join('i18n-output', current_date)
+
 # Load the Excel file
 xlsx = pd.read_excel('i18n.xlsx', sheet_name=None)
 
 # Call the function to start the process
-process_xlsx(xlsx, current_date)
+process_xlsx(xlsx, output_dir)
