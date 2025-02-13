@@ -6,59 +6,110 @@ Convert Excel file (`.xlsx` format) containing internationalization (i18n) data 
 
 **Input:** `.xlsx` file with the following format:
 
-- sheet names representing parent keys in `camelCase` format (e.g., `commonButton`).
-- columns containing child keys, language codes, and values. Example:
+- Sheet names:
+  - Representing main grouped component (e.g., UI component).
+  - The grouped component can be written in any case, following the developer convention.
+  - Example: `COMMONBUTTON`
+- Content:
+  - `key` columns representing unique identifier of each translation string for each supported language code and region.
+  - Each `key` can be written in any case, following the developwer convention.
+    - Example: `Apply`
+  - If there are any keys used for managing sub group, the child key corresponding to the parent key should be separated with `.` (dot) notation.
+    - Example:
+      - `Confirm.Yes`
+      - `Confirm.No`
+- Example:
 
-  | key    | zh-TW | en-US  |
-  | ------ | ----- | ------ |
-  | apply  | 套用  | Apply  |
-  | export | 道出  | Export |
-  | send   | 送出  | Send   |
+  A sheet named `COMMONBUTTON` has the following data:
+
+  | key         | zh-TW | en-US  |
+  | ----------- | ----- | ------ |
+  | Apply       | 套用  | Apply  |
+  | Export      | 道出  | Export |
+  | Send        | 送出  | Send   |
+  | Confirm.Yes | 是    | Yes    |
+  | Confirm.No  | 否    | No     |
 
 **Output:**
 
-- Individual JSON files named with the date time and language code (e.g., `2024-05-30-11-30-en-US.json`).
+- Individual JSON files, named according to their language code and region (e.g., `en-US.json`, `zh-TW.json`, etc.), are stored within a directory named with the date and time of generation inside the `i18n-output` directory. The date-time format for the directory name is `YYYYMMDD-HHmm`.
 
-- `zh-TW` json file sample output:
+  Example:
+
+  ```bash
+  i18n-xlsx-to-json/
+  ├── i18n-output/
+  │   └── 20250212-1500/
+  │       ├── en-US.json
+  │       └── zh-TW.json
+  ```
+
+- `zh-TW` JSON file sample output:
 
   ```json
   {
-    "commonButton": {
-      "apply": "套用",
-      "export": "道出",
-      "send": "送出"
+    "COMMONBUTTON": {
+      "Apply": "套用",
+      "Export": "道出",
+      "Send": "送出",
+      "Confirm": {
+        "Yes": "是",
+        "No": "否"
+      }
     }
   }
   ```
 
-- `en-US` json file sample output:
+- `en-US` JSON file sample output:
 
   ```json
   {
-    "commonButton": {
-      "apply": "Apply",
-      "export": "Export",
-      "send": "Send"
+    "COMMONBUTTON": {
+      "Apply": "Apply",
+      "Export": "Export",
+      "Send": "Send",
+      "Confirm": {
+        "Yes": "Yes",
+        "No": "No"
+      }
     }
   }
   ```
 
-**Functionality:**
+## Running The Program
 
-- Reads each sheet of the `.xlsx` file.
-- Extracts parent key (sheet name) and child keys (first column).
-- Iterates through each language code column.
-- Constructs a nested JSON dictionary with child keys as keys and corresponding values.
+Change your directory into this workspace directory, then install the requirements.
 
-**Benefits:**
+```bash
+pip install -r requirements.txt
+```
 
-- Improved efficiency and accuracy.
-- Reduced manual effort and error-proneness.
-- Enhanced data management and localization.
+Place the multi-language Excel file (e.g., `i18n.xlsx`) under the workspace directory as described on the following example:
 
-## Required Package
+```bash
+i18n-xlsx-to-json/
+└── i18n.xlsx
+```
 
-- `pandas`
-- `json`
-- `os`
-- `datetime`
+Make sure the i18n Excel file name on the [`xlsx-to-json.py`](/xlsx-to-json.py#L83-L84) script is matched to the file placed under the workspace directory.
+
+```python
+# Load the Excel file
+xlsx = pd.read_excel('i18n.xlsx', sheet_name=None)
+```
+
+Execute the Python script using the following command:
+
+```bash
+python xlsx-to-json.py
+```
+
+Each JSON files output, named according to their language code and region (e.g., `en-US.json`, `zh-TW.json`, etc.), are stored within a directory named with the date and time of generation inside the `i18n-output` directory. The date-time format for the directory name is `YYYYMMDD-HHmm`.
+
+```bash
+i18n-xlsx-to-json/
+├── i18n-output/
+│   └── 20250212-1500/
+│       ├── en-US.json
+│       └── zh-TW.json
+```
